@@ -1,6 +1,8 @@
 import React, { Component } from 'react';
-import { View, Image, TouchableOpacity, FlatList, StyleSheet } from 'react-native';
 import api from '../services/api';
+import io from 'socket.io-client';
+
+import { View, Image, TouchableOpacity, FlatList, StyleSheet } from 'react-native';
 
 import camera from './assets/camera.png';
 import more from './assets/more.png';
@@ -24,7 +26,7 @@ export default class Feed extends Component {
   socket;
 
   async componentDidMount() {
-    // this.registerToSocket();
+    this.registerToSocket();
 
     const response = await api.get('posts');
 
@@ -32,7 +34,28 @@ export default class Feed extends Component {
   }
 
   componentWillUnmount() {
-    // this.socket.disconnect();
+    this.socket.disconnect();
+  }
+
+  registerToSocket = () => {
+    this.socket = io('http://localhost:3333');
+
+    // post, like
+    socket.on('post', newPost => {
+      this.setState({ feed: [newPost, ...this.state.feed] });
+    });
+
+    this.socket.on('like', likedPost => {
+      this.setState({
+        feed: this.state.feed.map(post => 
+          post._id === likedPost._id ? likedPos : post
+        )
+      });
+    });
+  }
+
+  handleLike = id => {
+    api.post(`/posts/${id}/like`);
   }
 
   render() {
@@ -57,7 +80,7 @@ export default class Feed extends Component {
 
               <View style={styles.feedItemFooter}>
                 <View style={styles.actions}>
-                  <TouchableOpacity style={styles.action} onPress={() => {}}>
+                  <TouchableOpacity style={styles.action} onPress={() => {this.handleLike(item._id)}}>
                     <Image source={like} />
                   </TouchableOpacity>
 
